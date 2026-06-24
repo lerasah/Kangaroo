@@ -64,6 +64,11 @@ LFLAGS     = -lpthread
 
 endif
 
+# Portability: modern g++ (GCC 13+, e.g. ubuntu-latest) no longer includes
+# <cstdint> transitively, but the upstream sources use uintN_t without it.
+# Force-include it for every .cpp (harmless on older GCC / the CUDA image).
+CXXFLAGS += -include cstdint
+
 # ooragnak: reverse-kangaroo build. `make REVERSE=1` makes every kangaroo jump
 # subtract instead of add (walks the curve backwards). Must reach BOTH g++ and
 # nvcc or CPU/GPU diverge -- see CreateJumpTable, SolveKeyCPU, GPU/GPUCompute.h.
