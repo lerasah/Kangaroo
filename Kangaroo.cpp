@@ -417,7 +417,11 @@ void Kangaroo::SolveKeyCPU(TH_PARAM *ph) {
       ry.ModMulK1(&_s);
       ry.ModSub(p2y);
 
+#ifdef REVERSE
+      ph->distance[g].ModSubK1order(&jumpDistance[jmp]);   // reverse: walk backwards
+#else
       ph->distance[g].ModAddK1order(&jumpDistance[jmp]);
+#endif
 
 #ifdef USE_SYMMETRY
       // Equivalence symmetry class switch
@@ -823,6 +827,23 @@ void Kangaroo::CreateJumpTable() {
     jumpPointx[i].Set(&J.x);
     jumpPointy[i].Set(&J.y);
   }
+
+#ifdef REVERSE
+  // ooragnak reverse kangaroo: walk the curve BACKWARDS. Negating each jump
+  // point's y turns the herd's "+J" step into "-J" (point subtraction) on both
+  // the CPU (SolveKeyCPU) and GPU (GPU/GPUCompute.h) with no change to the EC
+  // slope math. The matching distance step is flipped to a subtraction there.
+  // jumpDistance is left small/positive so the 128-bit GPU jump distance (jD)
+  // and the average-jump statistic (distAvg) above stay valid.
+  {
+    Int negY;
+    for(int i = 0; i < NB_JUMP; ++i) {
+      negY.Set(Int::GetFieldCharacteristic());
+      negY.Sub(&jumpPointy[i]);          // p - y  (y in (0,p), so this is -y mod p)
+      jumpPointy[i].Set(&negY);
+    }
+  }
+#endif
 
   ::printf("Jump Avg distance: 2^%.2f\n",log2(distAvg));
 

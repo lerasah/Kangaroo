@@ -1,0 +1,45 @@
+name: Verify reverse kangaroo
+
+# Proves the reverse-jump change still solves: builds CPU-only (no CUDA needed)
+# both forward and with REVERSE=1, and asserts each recovers the SAME known
+# private key (0x1ABCDEF) for the bundled 24-bit test puzzle.
+on:
+  push:
+    branches: [ master ]
+    paths:
+      - '**.cpp'
+      - '**.h'
+      - 'GPU/**'
+      - 'Makefile'
+      - 'test/**'
+      - '.github/workflows/verify-reverse.yml'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install toolchain
+        run: sudo apt-get update && sudo apt-get install -y build-essential
+
+      - name: Build forward (CPU)
+        run: make all -j"$(nproc)"
+
+      - name: Solve known key (forward)
+        run: |
+          set -o pipefail
+          out=$(timeout 240 ./kangaroo -t 1 -d 8 test/reverse_test.txt | tee /dev/stderr)
+          echo "$out" | grep -iq "Priv: *0x1ABCDEF" || { echo "::error::FORWARD did not recover 0x1ABCDEF"; exit 1; }
+          echo "forward OK"
+
+      - name: Build reverse (CPU, REVERSE=1)
+        run: make clean && make REVERSE=1 all -j"$(nproc)"
+
+      - name: Solve known key (reverse)
+        run: |
+          set -o pipefail
+          out=$(timeout 240 ./kangaroo -t 1 -d 8 test/reverse_test.txt | tee /dev/stderr)
+          echo "$out" | grep -iq "Priv: *0x1ABCDEF" || { echo "::error::REVERSE did not recover 0x1ABCDEF"; exit 1; }
+          echo "reverse OK — reverse kangaroo recovers the same key"

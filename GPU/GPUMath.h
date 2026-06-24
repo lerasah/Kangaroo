@@ -120,6 +120,11 @@ __device__ __constant__ uint64_t _O[] = { 0xBFD25E8CD0364141ULL,0xBAAEDCE6AF48A0
   UADDO1((r)[0], (a)[0]); \
   UADD1((r)[1], (a)[1]);}
 
+// 128-bit subtract (ooragnak reverse kangaroo): r -= a
+#define Sub128(r,a) { \
+  USUBO1((r)[0], (a)[0]); \
+  USUB1((r)[1], (a)[1]);}
+
 // ---------------------------------------------------------------------------------------
 
 #define Neg(r) {\

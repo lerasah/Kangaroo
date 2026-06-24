@@ -86,7 +86,11 @@ __device__ void ComputeKangaroos(uint64_t *kangaroos,uint32_t maxFound,uint32_t 
       Load256(px[g],rx);
       Load256(py[g],ry);
 
+#ifdef REVERSE
+      Sub128(dist[g],jD[jmp]);   // ooragnak reverse: distance -= jump (jPy negated host-side)
+#else
       Add128(dist[g],jD[jmp]);
+#endif
 
 #ifdef USE_SYMMETRY
       if(ModPositive256(py[g]))
